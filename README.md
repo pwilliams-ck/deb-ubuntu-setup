@@ -1,39 +1,111 @@
 # deb-ubuntu-setup
 
-`dev-ubuntu-setup` is a collection of Ansible playbooks for setting up a new
-Ubuntu server. It is intended to be used on a fresh Debian or Ubuntu LTS server.
+`deb-ubuntu-setup` is an Ansible playbook for setting up a new Debian or Ubuntu
+server. It's designed to quickly configure a development environment on a fresh
+Debian or Ubuntu LTS server.
+
+## Features
+
+- Configures common system settings
+- Installs and sets up web server components
+- Optionally configures a PostgreSQL database
+- Installs development tools and utilities
+
+## Prerequisites
+
+- Ansible 2.9+ on your local machine
+- SSH access to the target Debian/Ubuntu server
+- Python 3 on the target server
 
 ## Getting Started
 
-You can use tags to selectively run parts of the playbook. Here are some
-examples:
+### Clone Repository & Run Setup
 
-### Run the entire playbook (excluding reboot)
+```bash
+git clone https://github.com/pwilliams-ck/deb-ubuntu-setup.git
+cd deb-ubuntu-setup
+./setup.sh
+```
 
-```yaml
+This script will:
+
+- Prompt you for necessary information
+- Update the `inventory.ini` file
+- Modify `group_vars/all.yml` with your inputs
+- Run the Ansible playbook
+
+## Manual Setup
+
+If you prefer to set things up manually:
+
+1. Update `inventory.ini` with your server's IP or hostname.
+2. Modify variables in `group_vars/all.yml` as needed.
+3. Run the playbook:
+
+```bash
 ansible-playbook -i inventory.ini server_setup.yml
 ```
 
-### Run everything except the db role
+### Skip DB Setup
 
-```yaml
+```bash
 ansible-playbook -i inventory.ini server_setup.yml --skip-tags "db"
 ```
 
-### Run only the common and web roles (excluding db)
+### Run only common and web server tasks
 
-```yaml
+````bash
+
+```bash
 ansible-playbook -i inventory.ini server_setup.yml --tags "common,web"
-```
+````
 
-### Run only the db role
+### Include Reboot
 
-```yaml
-ansible-playbook -i inventory.ini server_setup.yml --tags "db"
-```
-
-### Include the reboot task (which is tagged 'never' by default)
-
-```yaml
+```bash
 ansible-playbook -i inventory.ini server_setup.yml --tags "all,reboot"
 ```
+
+## Customization
+
+Modify these files to customize the playbook:
+
+- `roles/common/tasks/main.yml`: Common system setup
+- `roles/web/tasks/main.yml`: Web server setup
+- `roles/db/tasks/main.yml`: Database setup
+
+## Setup Script
+
+The `setup.sh` script automates the initial configuration. Here's what it does:
+
+1. Prompts for:
+
+   - Target server IP/hostname
+   - SSH user
+   - New username for the server
+   - Timezone
+   - Database password
+   - Whether to include database setup
+
+2. Updates `inventory.ini` and `group_vars/all.yml` with provided information.
+
+3. Runs the Ansible playbook with appropriate tags.
+
+To use it, simply run:
+
+```bash
+./setup.sh
+```
+
+### Make Script Executable
+
+```bash
+chmod +x setup.sh
+```
+
+Follow the prompts to configure and run the playbook.
+
+## Disclaimer
+
+This playbook makes significant changes to the target system. Always test in a
+safe environment before using on production servers.
