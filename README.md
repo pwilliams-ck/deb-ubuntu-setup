@@ -52,13 +52,11 @@ ansible-playbook -i inventory.ini server_setup.yml
 ansible-playbook -i inventory.ini server_setup.yml --skip-tags "db"
 ```
 
-### Run only common and web server tasks
-
-````bash
+### Run only Common and Web Server Tasks
 
 ```bash
 ansible-playbook -i inventory.ini server_setup.yml --tags "common,web"
-````
+```
 
 ### Include Reboot
 
