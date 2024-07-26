@@ -1,0 +1,27 @@
+---
+- name: Setup Debian/Ubuntu Server
+  hosts: all
+  become: yes
+  vars_prompt:
+    - name: username
+      prompt: "Enter username of the user running the app as a service"
+      private: no
+    - name: timezone
+      prompt: "Enter timezone for the server"
+      private: no
+    - name: db_password
+      prompt: "Enter password for DB user"
+      private: yes
+
+  roles:
+    - { role: common, tags: ["common"] }
+    - { role: web, tags: ["web"] }
+    - { role: db, tags: ["db"] }
+
+- name: Reboot server
+  hosts: all
+  become: yes
+  tags: ["never", "reboot"]
+  tasks:
+    - name: Reboot the server
+      reboot:

@@ -1,0 +1,42 @@
+---
+- name: Install PostgreSQL
+  ansible.builtin.apt:
+    name: postgresql
+    state: present
+
+- name: Create PostgreSQL database
+  ansible.builtin.become_user: postgres
+  postgresql_db:
+    name: "{{ username }}"
+
+- name: Create PostgreSQL user
+  ansible.builtin.become_user: postgres
+  postgresql_user:
+    db: "{{ username }}"
+    name: "{{ username }}"
+    password: "{{ db_password }}"
+
+- name: Add citext extension to database
+  ansible.builtin.become_user: postgres
+  postgresql_ext:
+    name: citext
+    db: "{{ username }}"
+
+- name: Configure PostgreSQL to listen only on localhost
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/*/main/postgresql.conf
+    regexp: '^#?listen_addresses\s*='
+    line: "listen_addresses = 'localhost'"
+  notify: Restart PostgreSQL
+
+- name: Add database DSN to environment
+  ansible.builtin.lineinfile:
+    path: /etc/environment
+    line: '{{ username }}_DB_DSN="postgres://{{ username }}:{{ db_password }}@localhost/{{ username }}"'
+
+- name: Install PostgreSQL client tools
+  ansible.builtin.apt:
+    name:
+      - postgresql-client
+      - pgcli
+    state: present

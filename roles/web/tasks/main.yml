@@ -1,0 +1,52 @@
+---
+- name: Install Caddy
+  block:
+    - name: Install required packages for Caddy
+      ansible.builtin.apt:
+        name:
+          - debian-keyring
+          - debian-archive-keyring
+          - apt-transport-https
+        state: present
+
+    - name: Add Caddy GPG key
+      ansible.builtin.apt_key:
+        url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
+        state: present
+
+    - name: Add Caddy repository
+      ansible.builtin.apt_repository:
+        repo: deb https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main
+        state: present
+        filename: caddy-stable
+
+    - name: Install Caddy
+      ansible.builtin.apt:
+        name: caddy
+        state: present
+        update_cache: true
+
+- name: Install migrate CLI tool
+  ansible.builtin.get_url:
+    url: https://github.com/golang-migrate/migrate/releases/download/v4.14.1/migrate.linux-amd64.tar.gz
+    dest: /tmp/migrate.tar.gz
+    mode: "0644"
+
+- name: Extract migrate CLI tool
+  ansible.builtin.unarchive:
+    src: /tmp/migrate.tar.gz
+    dest: /usr/local/bin
+    remote_src: true
+    extra_opts: [--strip-components=1]
+
+- name: Install Node.js and npm
+  ansible.builtin.apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+
+- name: Install Golang
+  ansible.builtin.apt:
+    name: golang-go
+    state: present

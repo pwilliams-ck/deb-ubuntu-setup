@@ -1,0 +1,110 @@
+---
+- name: Enable universe repository
+  ansible.builtin.apt_repository:
+    repo: universe
+    state: present
+
+- name: Update ansible.builtin.apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Set timezone
+  timezone:
+    name: "{{ timezone }}"
+
+- name: Install locales
+  ansible.builtin.apt:
+    name: locales-all
+    state: present
+
+- name: Create user
+  ansible.builtin.user:
+    name: "{{ username }}"
+    groups: sudo
+    shell: /bin/bash
+    create_home: true
+
+- name: Set random temporary password for new user
+  ansible.builtin.user:
+    name: "{{ username }}"
+    password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=12') | password_hash('sha512') }}"
+    update_password: always
+
+- name: Configure firewall
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+  loop:
+    - "22"
+    - "80"
+    - "443"
+
+- name: Enable firewall
+  ufw:
+    state: enabled
+
+- name: Install fail2ban
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+
+- name: Configure fail2ban
+  ansible.builtin.copy:
+    content: |
+      [sshd]
+      enabled = true
+      port = ssh
+      filter = sshd
+      logpath = /var/log/auth.log
+      maxretry = 5
+    dest: /etc/fail2ban/jail.local
+    mode: "0644"
+  notify: Restart fail2ban
+
+- name: Install additional packages
+  ansible.builtin.apt:
+    name:
+      - fzf
+      - eza
+      - zsh
+      - vim
+      - tmux
+      - htop
+      - git
+      - curl
+      - wget
+    state: present
+
+- name: Install Oh My Zsh
+  ansible.builtin.become_user: "{{ username }}"
+  shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  args:
+    creates: "/home/{{ username }}/.oh-my-zsh"
+
+- name: Install Zsh plugins
+  ansible.builtin.become_user: "{{ username }}"
+  ansible.builtin.git:
+    repo: "https://github.com/{{ item.repo }}"
+    dest: "/home/{{ username }}/.oh-my-zsh/custom/plugins/{{ item.name }}"
+  loop:
+    - { repo: "zsh-users/zsh-autosuggestions", name: "zsh-autosuggestions" }
+
+- name: Configure Zsh plugins
+  ansible.builtin.become_user: "{{ username }}"
+  lineinfile:
+    path: "/home/{{ username }}/.zshrc"
+    regexp: "^plugins="
+    line: "plugins=(git zsh-autosuggestions zsh-syntax-highlighting)"
+
+- name: Set Zsh as default shell for new user
+  ansible.builtin.user:
+    name: "{{ username }}"
+    shell: /bin/zsh
+
+- name: Upgrade all packages
+  ansible.builtin.apt:
+    upgrade: true
+
+- name: Remove unnecessary packages
+  ansible.builtin.apt:
+    autoremove: true
